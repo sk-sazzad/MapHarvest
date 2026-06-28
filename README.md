@@ -1,180 +1,261 @@
-# 🗺️ MapHarvest
+<div align="center">
+
+<img src="icons/icon128.png" width="100" alt="MapHarvest Icon"/>
+
+# MapHarvest
 
 > Extract business data from Google Maps and save it directly to Google Sheets — automatically.
 
-![Version](https://img.shields.io/badge/version-5.0.0-blue)
-![Manifest](https://img.shields.io/badge/manifest-v2-green)
-![Browser](https://img.shields.io/badge/browser-Chrome%20%7C%20Firefox-orange)
-![License](https://img.shields.io/badge/license-MIT-lightgrey)
+[![Version](https://img.shields.io/badge/version-5.1.0-crimson?style=for-the-badge)](https://github.com/sk-sazzad/MapHarvest/releases)
+[![Manifest](https://img.shields.io/badge/manifest-v2-555?style=for-the-badge)](https://developer.chrome.com/docs/extensions/mv2/)
+[![Chrome](https://img.shields.io/badge/Chrome-✓-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white)](https://www.google.com/chrome/)
+[![Firefox](https://img.shields.io/badge/Firefox-✓-FF7139?style=for-the-badge&logo=firefox&logoColor=white)](https://www.mozilla.org/firefox/)
+[![License](https://img.shields.io/badge/license-MIT-2ea44f?style=for-the-badge)](LICENSE)
+
+<br/>
+
+### ⬇️ Download
+
+[![Download MapHarvest](https://img.shields.io/badge/⬇%20Download%20MapHarvest%20v5.1.0-crimson?style=for-the-badge&logoColor=white)](https://github.com/sk-sazzad/MapHarvest/releases/latest/download/MapHarvest_v5.zip)
+
+*Supports Chrome and Firefox · No account required · Free forever*
+
+<br/>
 
 ---
 
-## What is MapHarvest?
+</div>
 
-MapHarvest is a browser extension for Chrome and Firefox that automatically collects business information from Google Maps search results and sends it directly to your Google Sheet — with zero manual copy-pasting.
+## ✦ What is MapHarvest?
 
-You enter a search keyword like **"coaching centers in rajshahi"**, press Start, and MapHarvest does the rest: scrolls through all results, opens each business profile, extracts the data, and saves it to your Sheet in real time.
+MapHarvest is a browser extension built for lead generation and business research. It automates the entire data collection process from Google Maps — scrolling through results, opening each business profile, extracting structured data including customer reviews, and saving everything directly to your Google Sheet in real time.
 
----
-
-## Features
-
-- **Multi-keyword queue** — Add multiple keywords, MapHarvest extracts them one by one automatically
-- **Smart duplicate detection** — 3-layer check (Profile Link → Name + Phone → Name + Address) so no business appears twice
-- **Auto Category · City sheets** — Each category and city gets its own Sheet tab automatically (e.g. `Coaching Center · Rajshahi`)
-- **Master sheet** — All extracted data also goes to a single `All Data` sheet
-- **Auto-resume** — If your network drops or browser closes, extraction resumes from where it stopped
-- **Failed row retry** — If a Sheet save fails, it queues the row and retries automatically
-- **Export** — Download all extracted data as CSV or JSON anytime
-- **Extraction history** — See every keyword you've run and how many records were saved
-- **Works on Chrome and Firefox**
+**No copy-pasting. No manual work. Just data.**
 
 ---
 
-## Data Extracted
+## ✦ Features
 
-| Field | Description |
-|-------|-------------|
-| Name | Business name |
-| Category | Type of business (from Maps profile) |
-| Rating | Star rating (e.g. 4.6) |
-| Reviews | Total review count |
-| Phone | Phone number |
-| Email | Email address (if listed) |
-| Address | Full address |
-| Website | Business website URL |
-| Profile Link | Direct Google Maps link |
-| Hours | Opening hours |
-| Keyword | Search keyword used |
-| Extracted At | Date and time of extraction |
+<table>
+<tr>
+<td width="50%">
+
+**🔍 Multi-keyword Queue**
+Add multiple keywords — each runs automatically after the previous finishes. Set it and walk away.
+
+**🧠 3-Layer Duplicate Detection**
+Profile Link → Name + Phone → Name + Address. No business appears twice.
+
+**📊 Auto Sheet Organization**
+Each Category + City gets its own tab automatically. One master sheet holds everything.
+
+**💬 Review Extraction**
+First 20 reviews per business — reviewer name, star rating, full text, image URLs, video URLs — stored as JSON.
+
+</td>
+<td width="50%">
+
+**♻️ Auto-Resume**
+Network drops or browser closes? Extraction resumes exactly where it stopped.
+
+**🔁 Failed Row Retry Queue**
+Sheet save fails? The row is queued locally and retried automatically. Zero data loss.
+
+**⬇️ CSV & JSON Export**
+Download all extracted data at any point — during or after extraction.
+
+**🕒 Extraction History**
+Every keyword, date, and record count — tracked automatically in the History tab.
+
+</td>
+</tr>
+</table>
 
 ---
 
-## Installation
+## ✦ Data Extracted
 
-### Step 1 — Set up Google Sheet
+### Business Fields
 
-1. Open a Google Sheet (new or existing)
+| # | Column | Field | Example |
+|---|--------|-------|---------|
+| A | Name | Business name | BCS Confidence Rajshahi |
+| B | Category | Type from Maps profile | Coaching center |
+| C | Rating | Star rating | 4.9 |
+| D | Reviews | Total review count | 259 |
+| E | Phone | Phone number | 01711-304281 |
+| F | Email | Email (if listed) | info@example.com |
+| G | Address | Full address | Kumar Para Union, Rajshahi |
+| H | Website | Business website | bcsconfidence.com |
+| I | Profile Link | Direct Maps URL | maps.google.com/place/... |
+| J | Hours | Opening hours | Opens 9 AM Sun |
+| K | Keyword | Search keyword used | coaching centers in rajshahi |
+| L | Extracted At | Timestamp | 28/06/2026, 14:32 |
+| M | Reviews (JSON) | First 20 reviews | `[{"reviewer":...}]` |
+
+### Reviews JSON (Column M)
+
+```json
+[
+  {
+    "reviewer": "Md. Ziaul Hoque Emon",
+    "rating": 4,
+    "text": "The environment is wonderful. Highly recommended for BCS preparation.",
+    "images": ["https://lh5.googleusercontent.com/..."],
+    "videos": []
+  },
+  {
+    "reviewer": "Sarah Khan",
+    "rating": 5,
+    "text": "Best coaching in Rajshahi!",
+    "images": [],
+    "videos": ["https://video.google.com/..."]
+  }
+]
+```
+
+---
+
+## ✦ Google Sheet Structure
+
+```
+📗 MapHarvest — Extracted Data
+│
+├── 📋 All Data                       ← Master sheet (every record from all keywords)
+│
+├── 📋 Coaching Center · Rajshahi     ← Auto-created per Category + City
+├── 📋 Hospital · Dhaka               ← Auto-created
+├── 📋 Restaurant · Chittagong        ← Auto-created
+└── ...
+```
+
+Same category + same city from different keywords → same sheet tab. No duplication.
+
+---
+
+## ✦ Installation
+
+### Step 1 — Google Sheet Setup (One-time)
+
+1. Open a new Google Sheet
 2. Go to **Extensions → Apps Script**
-3. Delete everything in the editor
-4. Copy the contents of `GoogleAppsScript.gs` and paste it
-5. Press **Ctrl+S** to save
-6. Click **Deploy → New Deployment**
+3. Delete everything → paste the full contents of `GoogleAppsScript.gs` → **Ctrl+S**
+4. Click **Deploy → New Deployment**
    - Type: **Web App**
    - Execute as: **Me**
    - Access: **Anyone**
-7. Click **Deploy** → Authorize → **Copy the Web App URL**
+5. Click **Deploy** → Authorize → **Copy the Web App URL**
 
-### Step 2 — Install the Extension
-
-**Chrome:**
-1. Go to `chrome://extensions/`
-2. Enable **Developer mode** (top right)
-3. Click **Load unpacked**
-4. Select the `MapHarvest` folder
-
-**Firefox:**
-1. Go to `about:debugging`
-2. Click **This Firefox**
-3. Click **Load Temporary Add-on**
-4. Select `manifest.json` from the `MapHarvest` folder
-
-### Step 3 — Connect to Google Sheet
-
-1. Click the MapHarvest icon in your browser toolbar
-2. Paste the **Web App URL** from Step 1
-3. Click **Test** — you should see "Connected ✓"
+> The URL is saved in the extension after the first connection. You won't need to re-enter it in future sessions.
 
 ---
 
-## How to Use
+### Step 2 — Install Extension
 
-1. Open the extension popup
-2. Enter one or more search keywords (one per line):
-   ```
-   coaching centers in rajshahi
-   hospitals in dhaka
-   restaurants in chittagong
-   ```
-3. Choose result limit: **All Results** or a **Custom** number per keyword
-4. Click **▶ Start Extraction**
-
-MapHarvest will open Google Maps, scroll through all results, extract each business profile, and save the data to your Sheet — keyword by keyword, automatically.
-
----
-
-## Google Sheet Structure
-
+**Chrome**
 ```
-All Data              ← Master sheet (every record from all keywords)
-Coaching Center · Rajshahi   ← Auto-created per Category + City
-Hospital · Dhaka             ← Auto-created
-Restaurant · Chittagong      ← Auto-created
+1. Go to chrome://extensions/
+2. Enable Developer mode (top-right toggle)
+3. Click Load unpacked → Select the MapHarvest folder
 ```
 
-Category and city are detected from each business's own Maps profile. If the city can't be detected from the profile, it falls back to the keyword you entered.
+**Firefox**
+```
+1. Go to about:debugging → This Firefox
+2. Click Load Temporary Add-on → Select manifest.json
+```
 
 ---
 
-## Duplicate Detection
+### Step 3 — Connect & Run
 
-MapHarvest checks for duplicates in 3 layers before saving any record:
-
-1. **Profile Link** — Most accurate (every Maps listing has a unique URL)
-2. **Name + Phone** — Catches same business with slightly different URLs
-3. **Name + Address** — Backup when phone number is missing
-
-If any layer matches, the record is skipped automatically.
+1. Click the **MapHarvest** icon in your toolbar
+2. Paste your **Web App URL** → Click **Test** → `● Connected ✓`
+3. Enter keywords (one per line) → Set limit → Click **▶ INJECT**
 
 ---
 
-## Auto-Resume
+## ✦ How It Works
 
-If your internet drops or you close the browser mid-extraction:
-
-- Extraction pauses automatically
-- When connection returns, it resumes from exactly where it stopped
-- If the browser was closed, a **Resume** banner appears next time you open the extension
+```
+You enter keywords
+       ↓
+MapHarvest opens Google Maps
+       ↓
+Scrolls through all results
+       ↓
+Clicks each business profile
+       ↓
+Extracts: name, phone, email, address, website, hours, rating, reviews...
+       ↓
+Opens Reviews tab → collects first 20 reviews
+       ↓
+Sends to Google Sheet in real time
+       ↓
+Moves to next keyword automatically
+```
 
 ---
 
-## File Structure
+## ✦ Auto-Resume
+
+| Event | What happens |
+|-------|-------------|
+| Network drops | Extraction pauses automatically |
+| Network returns | Extraction resumes automatically in 3 seconds |
+| Browser closed | Resume banner appears next time you open the extension |
+| Sheet save fails | Row queued locally, retried automatically |
+
+---
+
+## ✦ File Structure
 
 ```
 MapHarvest/
-├── manifest.json          ← Extension configuration
-├── popup.html             ← Extension popup UI
+├── manifest.json          ← Extension config (Chrome + Firefox)
+├── popup.html             ← Popup UI
+├── GoogleAppsScript.gs    ← Paste into Google Sheet Apps Script
 ├── src/
-│   ├── popup.js           ← Popup logic & multi-keyword queue
-│   ├── content.js         ← Core extractor (runs inside Google Maps)
-│   └── background.js      ← State management, keep-alive, retry queue
-├── icons/                 ← Extension icons
-└── GoogleAppsScript.gs    ← Paste this into your Google Sheet
+│   ├── popup.js           ← UI logic, queue, history, export
+│   ├── content.js         ← Core extractor (runs in Maps tab)
+│   └── background.js      ← State, keep-alive, retry queue
+└── icons/
+    ├── icon16.png
+    ├── icon48.png
+    └── icon128.png
 ```
 
 ---
 
-## Requirements
+## ✦ Changelog
 
-- Chrome (any recent version) or Firefox
-- A Google account with access to Google Sheets
-- Google Apps Script Web App deployed (see Installation Step 1)
+**v5.1.0** — Reviews extraction (20 per business · name, rating, text, images, videos · stored as JSON in column M)
+
+**v5.0.0** — Multi-keyword queue · fixed header/footer popup · history tab · CSV/JSON export
+
+**v4.0.0** — Auto-resume · failed row retry · keep-alive · 3-layer duplicate detection · Category·City sheets
 
 ---
 
-## Notes
+## ✦ Notes
 
-- Keep the Google Maps tab open while extracting
+- Keep the Google Maps tab **open** while extracting
+- For 500+ result extractions, use a **custom limit** per keyword to avoid rate limiting
 - Email is extracted only if it appears directly on the Maps listing page
-- For very large extractions (1000+), use a reasonable custom limit to avoid rate limiting from Google
-- Each re-deployment of the Apps Script generates a new URL — update it in the extension if you redeploy
+- If you create a **New Deployment** in Apps Script, update the URL in the extension
 
 ---
 
-## License
+## ✦ License
 
-MIT License — free to use, modify, and distribute.
+MIT — free to use, modify, and distribute.
 
 ---
 
-<p align="center">Built with ❤️ for lead generation and business research</p>
+<div align="center">
+
+Built for lead generation, business research, and market intelligence.
+
+**[⭐ Star this repo](https://github.com/sk-sazzad/MapHarvest)** · **[🐛 Report an issue](https://github.com/sk-sazzad/MapHarvest/issues)** · **[📥 Download latest](https://github.com/sk-sazzad/MapHarvest/releases/latest)**
+
+</div>
