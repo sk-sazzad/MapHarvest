@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>MapHarvest</title>
+<style>
+/* ══════════════════════════════════════════
+   ROOT — change font-size here = everything
+   scales: padding, gap, heights all in em
+   ══════════════════════════════════════════ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:         #111115;
+  --surface2:   #1e1e26;
+  --border:     #2a2a36;
+  --accent:     #e8183a;
+  --accent-dim: #8b0020;
+  --text:       #f0f0f5;
+  --text-mid:   #b0b0c0;
+  --text-dim:   #707080;
+  --text-faint: #3a3a4a;
+  --num-color:  #ff5570;
+  --warn:       #e09020;
+  --ok:         #30c070;
+
+  /* ── SIZE CONTROL — tweak these 2 to resize everything ── */
+  --base:   13px;   /* base font size  (was 12px) */
+  --wide:   420px;  /* popup width     (was 390px) */
+}
+
+html { font-size: var(--base); }
+
+body {
+  width: var(--wide);
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Courier New', monospace;
+  font-size: 1rem;
+}
+
+/* scanline */
+body::after {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9999;
+  background: repeating-linear-gradient(0deg,
+    rgba(0,0,0,.04) 0, rgba(0,0,0,.04) 1px, transparent 1px, transparent 3px);
+}
+
+/* ══ HEADER ══ */
+.hdr { background: #12121b; border-bottom: 2px solid var(--accent);
+  position: relative; overflow: hidden; }
+.hdr::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 55% 90% at 16% 50%, rgba(232,24,58,.08) 0%, transparent 65%),
+    repeating-linear-gradient(90deg, transparent, transparent 1.4em,
+      rgba(232,24,58,.022) 1.4em, rgba(232,24,58,.022) calc(1.4em + 1px));
+}
+.hdr-main {
+  display: flex; align-items: center;
+  padding: 1.1em 1.2em 1em; gap: 1em; position: relative;
+}
+.hdr-logo { width: 3.8em; height: 3.8em; flex-shrink: 0; }
+.hdr-logo svg { width: 100%; height: 100%;
+  filter: drop-shadow(0 0 .5em rgba(232,24,58,.55)); }
+
+.hdr-titles { flex: 1; min-width: 0; }
+.hdr-t1 {
+  color: var(--accent); font-size: 1.5em; font-weight: 900;
+  letter-spacing: .38em; text-transform: uppercase;
+  text-shadow: 0 0 1.4em rgba(232,24,58,.55);
+}
+.hdr-t2 {
+  color: var(--text-dim); font-size: .69em;
+  letter-spacing: .24em; margin-top: .25em; text-transform: uppercase;
+}
+.hdr-right { display: flex; align-items: center; gap: .85em; flex-shrink: 0; }
+.hdr-ver {
+  color: var(--accent); border: 1px solid rgba(232,24,58,.55);
+  font-size: .77em; font-weight: 700; padding: .22em .7em;
+  letter-spacing: .08em; box-shadow: 0 0 .6em rgba(232,24,58,.2);
+}
+.hdr-wbtns { display: flex; gap: .85em; }
+.hdr-wbtn {
+  color: var(--text-dim); font-size: 1.08em; cursor: pointer;
+  line-height: 1; user-select: none; transition: color .15s;
+}
+.hdr-wbtn:hover { color: var(--text); }
+
+.hdr-status {
+  background: #0e0e16; border-top: 1px solid var(--border);
+  padding: .4em 1.2em; display: flex; align-items: center;
+  font-size: .77em; letter-spacing: .12em;
+}
+.hdr-si {
+  display: flex; align-items: center; gap: .55em;
+  color: var(--text-dim); white-space: nowrap;
+}
+.hdr-si:not(:last-child) {
+  padding-right: 1.2em; margin-right: 1.2em;
+  border-right: 1px solid var(--border);
+}
+.hdr-si .sval { color: var(--accent); font-weight: 700; }
+.sdot {
+  width: .54em; height: .54em; border-radius: 50%;
+  background: var(--accent); flex-shrink: 0;
+  box-shadow: 0 0 .46em var(--accent);
+  animation: blink 1.4s ease-in-out infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+
+/* ══ TABS ══ */
+.tabs { display: flex; border-bottom: 1px solid var(--border); background: #14141c; }
+.tab {
+  flex: 1; padding: .7em 0; text-align: center;
+  font-size: .77em; color: var(--text-faint);
+  letter-spacing: .16em; font-weight: 700; text-transform: uppercase;
+  border-bottom: 2px solid transparent; cursor: pointer; transition: all .2s;
+  font-family: 'Courier New', monospace;
+}
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); background: var(--bg); }
+
+/* ══ BANNERS ══ */
+#resume-banner {
+  background: rgba(232,24,58,.07);
+  border: 1px solid rgba(232,24,58,.25); border-left: 3px solid var(--accent);
+  margin: .77em 1.08em 0; padding: .7em .92em;
+  display: none; align-items: center; gap: .77em;
+}
+#resume-banner.show { display: flex; }
+#resume-banner span { flex: 1; font-size: .85em; color: var(--text-mid); }
+#btn-resume {
+  background: var(--accent); border: none; color: #fff;
+  font-size: .77em; font-weight: 900; padding: .46em 1em;
+  cursor: pointer; letter-spacing: .16em; font-family: 'Courier New', monospace;
+}
+#net-banner {
+  background: rgba(224,144,32,.08);
+  border: 1px solid rgba(224,144,32,.3); border-left: 3px solid var(--warn);
+  margin: .62em 1.08em 0; padding: .62em .92em;
+  font-size: .85em; color: var(--warn); display: none;
+}
+#net-banner.show { display: block; }
+
+/* ══ SECTIONS ══ */
+.sec { padding: .85em 1.08em; border-bottom: 1px solid var(--border); }
+
+.sec-lbl {
+  font-size: .69em; color: var(--text-dim);
+  letter-spacing: .24em; text-transform: uppercase; margin-bottom: .55em;
+  display: flex; align-items: center; gap: .46em;
+}
+.sec-lbl::before { content: '>_'; color: var(--accent); font-size: 1.08em; opacity: .8; }
+.sec-lbl-row {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: .55em;
+}
+.sec-lbl-row .sec-lbl { margin-bottom: 0; }
+.kw-count {
+  font-size: .69em; font-weight: 700; color: var(--accent);
+  background: rgba(232,24,58,.12); border: 1px solid rgba(232,24,58,.3);
+  padding: .16em .7em; letter-spacing: .08em;
+}
+
+/* inputs */
+textarea, input[type=text], input[type=url], input[type=number] {
+  width: 100%; background: var(--surface2);
+  border: 1px solid var(--border); border-left: 2px solid var(--accent-dim);
+  color: var(--text); padding: .62em .77em;
+  font-family: 'Courier New', monospace; font-size: .85em;
+  outline: none; line-height: 1.65; resize: none;
+}
+textarea::placeholder, input::placeholder { color: var(--text-faint); }
+textarea:focus, input:focus { border-color: var(--accent-dim); }
+#keywords { height: 5.4em; }
+.kw-hint { font-size: .69em; color: var(--text-dim); margin-top: .4em; letter-spacing: .04em; }
+
+/* keyword queue */
+.kw-queue {
+  margin-top: .62em; display: flex; flex-direction: column; gap: .24em;
+  max-height: 8.3em; overflow-y: auto;
+}
+.kw-queue::-webkit-scrollbar { width: 3px; }
+.kw-queue::-webkit-scrollbar-track { background: var(--bg); }
+.kw-queue::-webkit-scrollbar-thumb { background: var(--border); }
+
+.kw-tag {
+  display: flex; align-items: center; gap: .62em;
+  background: var(--surface2); border: 1px solid var(--border);
+  padding: .46em .77em; font-size: .85em;
+}
+.kw-tag.active {
+  border-color: var(--accent); background: rgba(232,24,58,.07);
+  box-shadow: inset 0 0 .77em rgba(232,24,58,.06);
+}
+.kw-tag.done { opacity: .4; }
+.kw-tag-num {
+  font-size: .69em; font-weight: 700; background: var(--border);
+  color: var(--text-dim); padding: .16em .46em;
+  min-width: 1.7em; text-align: center; flex-shrink: 0;
+}
+.kw-tag.active .kw-tag-num { background: rgba(232,24,58,.3); color: var(--accent); }
+.kw-tag-txt {
+  flex: 1; color: var(--text-mid);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.kw-tag.active .kw-tag-txt { color: var(--text); font-weight: 600; }
+.kw-tag.done  .kw-tag-txt { text-decoration: line-through; color: var(--text-faint); }
+.kw-tag-status { font-size: .85em; color: var(--text-dim); flex-shrink: 0; }
+.kw-tag.active .kw-tag-status { color: var(--accent); }
+
+/* overall progress */
+.kw-overall {
+  padding: .54em 1.08em; border-bottom: 1px solid var(--border);
+  display: none; align-items: center; gap: .77em;
+  font-size: .77em; color: var(--text-dim);
+}
+.kw-overall.show { display: flex; }
+.kw-overall-bar {
+  flex: 1; background: var(--surface2); border: 1px solid var(--border);
+  height: .31em; overflow: hidden;
+}
+.kw-overall-fill { height: 100%; background: var(--accent); width: 0%; transition: width .4s; }
+#kw-overall-pct { color: var(--accent); font-weight: 700; min-width: 2.3em; text-align: right; }
+
+/* toggles */
+.toggle-row { display: flex; gap: .46em; }
+.tog {
+  flex: 1; padding: .62em; text-align: center;
+  border: 1px solid var(--border); background: var(--surface2);
+  color: var(--text-mid); font-size: .77em; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase;
+  font-family: 'Courier New', monospace; cursor: pointer; transition: all .2s;
+}
+.tog.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+#custom-wrap { margin-top: .54em; }
+
+/* input + ping row */
+.input-row { display: flex; gap: .54em; }
+.input-row input { flex: 1; }
+.btn-sm {
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text-mid); font-size: .77em; font-weight: 700;
+  padding: .62em 1em; cursor: pointer; letter-spacing: .08em;
+  font-family: 'Courier New', monospace; white-space: nowrap; transition: all .2s;
+}
+.btn-sm:hover { border-color: var(--accent); color: var(--accent); }
+
+.status-row {
+  display: flex; align-items: center; gap: .46em;
+  margin-top: .54em; font-size: .85em; color: var(--text-mid);
+}
+.dot { width: .54em; height: .54em; border-radius: 50%; background: var(--border); flex-shrink: 0; }
+.dot.ok   { background: var(--ok);     box-shadow: 0 0 .46em var(--ok); }
+.dot.err  { background: var(--accent); box-shadow: 0 0 .46em var(--accent); }
+.dot.warn { background: var(--warn);   box-shadow: 0 0 .46em var(--warn); }
+
+/* stats */
+.stats {
+  display: grid; grid-template-columns: repeat(4,1fr);
+  gap: .46em; padding: .77em 1.08em; border-bottom: 1px solid var(--border);
+}
+.stat {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-top: 2px solid #3a0015; padding: .7em .31em; text-align: center;
+}
+.stat-n {
+  font-size: 1.54em; font-weight: 900; color: var(--num-color);
+  text-shadow: 0 0 .77em rgba(255,85,112,.3);
+}
+.stat-l {
+  font-size: .62em; color: var(--text-dim);
+  letter-spacing: .16em; margin-top: .24em; text-transform: uppercase;
+}
+
+/* per-keyword progress */
+.prog-wrap { padding: .7em 1.08em .77em; border-bottom: 1px solid var(--border); display: none; }
+.prog-wrap.show { display: block; }
+.prog-bg {
+  background: var(--surface2); border: 1px solid var(--border);
+  height: .38em; overflow: hidden; margin-bottom: .46em;
+}
+.prog-fill {
+  height: 100%; width: 0%;
+  background: repeating-linear-gradient(90deg,
+    var(--accent-dim) 0, var(--accent-dim) .46em, var(--accent) .46em, var(--accent) .62em);
+  transition: width .3s;
+}
+.prog-txt { display: flex; justify-content: space-between; font-size: .77em; color: var(--text-dim); }
+#prog-pct { color: var(--accent); font-weight: 700; }
+
+/* action buttons */
+.btn-row { padding: .85em 1.08em; display: flex; gap: .62em; }
+#btn-start {
+  flex: 1; padding: .92em; border: none; color: #fff;
+  background: var(--accent);
+  font-family: 'Courier New', monospace; font-size: .92em; font-weight: 900;
+  letter-spacing: .24em; text-transform: uppercase; cursor: pointer;
+  box-shadow: 0 0 1.7em rgba(232,24,58,.45); transition: all .2s;
+}
+#btn-start:hover:not(:disabled) { box-shadow: 0 0 2.6em rgba(232,24,58,.7); }
+#btn-start:disabled {
+  background: var(--surface2); color: var(--text-faint);
+  border: 1px solid var(--border); box-shadow: none; cursor: not-allowed;
+}
+#btn-pause, #btn-stop {
+  padding: .92em 1.08em; background: var(--surface2); border: 1px solid;
+  font-family: 'Courier New', monospace; font-size: .85em;
+  font-weight: 700; cursor: pointer; letter-spacing: .08em; transition: all .2s;
+}
+#btn-pause { color: var(--warn); border-color: rgba(224,144,32,.3); }
+#btn-pause:hover { background: rgba(224,144,32,.08); }
+#btn-stop  { color: var(--text-dim); border-color: var(--border); }
+#btn-stop:hover { color: var(--accent); border-color: rgba(232,24,58,.3); }
+.hidden { display: none !important; }
+
+/* export */
+.export-row { display: flex; gap: .54em; padding: 0 1.08em .92em; }
+.btn-export {
+  flex: 1; padding: .62em; background: var(--surface2);
+  border: 1px solid var(--border); color: var(--text-mid);
+  font-family: 'Courier New', monospace; font-size: .77em; font-weight: 700;
+  cursor: pointer; letter-spacing: .16em; text-transform: uppercase; transition: all .2s;
+}
+.btn-export:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.btn-export:disabled { opacity: .3; cursor: not-allowed; }
+
+/* log */
+.log-wrap { padding: 0 1.08em 1em; }
+.log-lbl {
+  font-size: .69em; color: var(--text-dim);
+  letter-spacing: .24em; text-transform: uppercase;
+  margin-bottom: .4em; display: flex; align-items: center; gap: .4em;
+}
+.log-lbl::before { content: '>_'; color: var(--text-faint); }
+#log {
+  background: #0b0b10; border: 1px solid var(--border);
+  border-left: 2px solid var(--accent-dim);
+  padding: .7em .77em; height: 7em; overflow-y: auto;
+  font-family: 'Courier New', monospace; font-size: .8em; line-height: 1.7;
+}
+#log::-webkit-scrollbar { width: 3px; }
+#log::-webkit-scrollbar-track { background: #0b0b10; }
+#log::-webkit-scrollbar-thumb { background: var(--border); }
+.l-ok   { color: #e85575; }
+.l-err  { color: #ff6060; }
+.l-warn { color: var(--warn); }
+.l-info { color: var(--text-dim); }
+
+/* ══ HISTORY ══ */
+#tab-history { display: none; }
+.hist-item {
+  padding: .77em 1.08em; border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.hist-kw { font-size: .92em; font-weight: 600; color: var(--text); }
+.hist-meta { font-size: .77em; color: var(--text-dim); margin-top: .16em; }
+.hist-badge {
+  background: var(--surface2); border: 1px solid var(--border);
+  padding: .16em .77em; font-size: .77em; color: var(--accent);
+}
+.hist-empty {
+  padding: 2.3em 1.08em; text-align: center;
+  color: var(--text-dim); font-size: .92em;
+}
+
+/* ══ BOTTOM BAR ══ */
+.bbar {
+  background: #0e0e16; border-top: 1px solid var(--border);
+  padding: .54em 0; display: flex;
+}
+.bbar-item {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  gap: .4em; font-size: .69em; color: var(--text-dim);
+  letter-spacing: .05em; padding: 0 .31em;
+}
+.bbar-item:not(:last-child) { border-right: 1px solid var(--border); }
+.bbar-item svg { flex-shrink: 0; width: .92em; height: .92em; }
+.bval { color: var(--text-mid); }
+.bval.green { color: var(--ok); font-weight: 700; }
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<div class="hdr">
+  <div class="hdr-main">
+    <div class="hdr-logo">
+      <svg viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="6.5" y="6.5" width="39" height="39" rx="2"
+          transform="rotate(45 26 26)"
+          stroke="#e8183a" stroke-width="1.5" fill="rgba(232,24,58,.08)"/>
+        <line x1="26" y1="2"  x2="26" y2="14" stroke="#e8183a" stroke-width="1.4"/>
+        <line x1="26" y1="38" x2="26" y2="50" stroke="#e8183a" stroke-width="1.4"/>
+        <line x1="2"  y1="26" x2="14" y2="26" stroke="#e8183a" stroke-width="1.4"/>
+        <line x1="38" y1="26" x2="50" y2="26" stroke="#e8183a" stroke-width="1.4"/>
+        <circle cx="26" cy="26" r="6.5" stroke="#e8183a" stroke-width="1.4" fill="none"/>
+        <circle cx="26" cy="26" r="2.2" fill="#e8183a"/>
+      </svg>
+    </div>
+    <div class="hdr-titles">
+      <div class="hdr-t1">MAPHARVEST</div>
+      <div class="hdr-t2">BLOOD RED OPERATOR</div>
+    </div>
+    <div class="hdr-right">
+      <div class="hdr-ver">V5.0.0</div>
+      <div class="hdr-wbtns">
+        <div class="hdr-wbtn">—</div>
+        <div class="hdr-wbtn">✕</div>
+      </div>
+    </div>
+  </div>
+  <div class="hdr-status">
+    <div class="hdr-si">
+      <div class="sdot"></div>
+      <span>STATUS: <span class="sval">ACTIVE</span></span>
+    </div>
+    <div class="hdr-si">
+      <span>MODE: <span class="sval">KEYWORD</span></span>
+    </div>
+    <div class="hdr-si">
+      <span>ENGINE: <span class="sval">GOOGLE MAPS</span></span>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TABS ══ -->
+<div class="tabs">
+  <div class="tab active" data-tab="main">[EXTRACT]</div>
+  <div class="tab" data-tab="history">[HISTORY]</div>
+</div>
+
+<!-- ══ MAIN TAB ══ -->
+<div id="tab-main">
+
+  <div id="net-banner">⚠ Network disconnected — extraction paused. Will auto-resume when back online.</div>
+  <div id="resume-banner">
+    <span id="resume-txt">Previous session found. Resume?</span>
+    <button id="btn-resume">▶ RESUME</button>
+  </div>
+
+  <div class="sec">
+    <div class="sec-lbl-row">
+      <div class="sec-lbl">TARGET_QUERY</div>
+      <span class="kw-count" id="kw-count">0 KEYWORDS</span>
+    </div>
+    <textarea id="keywords" placeholder="One keyword per line:&#10;Restaurant in New York&#10;hospitals in New York&#10;restaurants in new york"></textarea>
+    <div class="kw-hint">// one target per line — sequential injection mode</div>
+    <div class="kw-queue" id="kw-queue"></div>
+  </div>
+
+  <div class="kw-overall" id="kw-overall">
+    <span id="kw-overall-txt">Keyword 0 / 0</span>
+    <div class="kw-overall-bar">
+      <div class="kw-overall-fill" id="kw-overall-fill"></div>
+    </div>
+    <span id="kw-overall-pct">0%</span>
+  </div>
+
+  <div class="sec">
+    <div class="sec-lbl">RESULT_LIMIT</div>
+    <div class="toggle-row">
+      <div class="tog on" data-val="unlimited">♾ ALL RESULTS</div>
+      <div class="tog" data-val="custom">## CUSTOM</div>
+    </div>
+    <div id="custom-wrap" style="display:none;">
+      <input type="number" id="custom-limit" placeholder="Enter number (e.g. 50)" min="1"/>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-lbl">EXFIL_ENDPOINT</div>
+    <div class="input-row">
+      <input type="url" id="sheet-url" placeholder="https://script.google.com/macros/s/.../exec"/>
+      <button class="btn-sm" id="btn-test">PING</button>
+    </div>
+    <div class="status-row">
+      <div class="dot" id="sheet-dot"></div>
+      <span id="sheet-status">Not configured</span>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-n" id="st-kw">0</div><div class="stat-l">TARGETS</div></div>
+    <div class="stat"><div class="stat-n" id="st-found">0</div><div class="stat-l">SCRAPED</div></div>
+    <div class="stat"><div class="stat-n" id="st-saved">0</div><div class="stat-l">EXFIL</div></div>
+    <div class="stat"><div class="stat-n" id="st-err">0</div><div class="stat-l">FAILED</div></div>
+  </div>
+
+  <div class="prog-wrap" id="prog-wrap">
+    <div class="prog-bg"><div class="prog-fill" id="prog-fill"></div></div>
+    <div class="prog-txt">
+      <span id="prog-lbl">Processing…</span>
+      <span id="prog-pct">0%</span>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button id="btn-start">▶ INJECT</button>
+    <button id="btn-pause" class="hidden">⏸ HOLD</button>
+    <button id="btn-stop"  class="hidden">⏹ KILL</button>
+  </div>
+
+  <div class="export-row">
+    <button class="btn-export" id="btn-csv"  disabled>⬇ DUMP.CSV</button>
+    <button class="btn-export" id="btn-json" disabled>⬇ DUMP.JSON</button>
+  </div>
+
+  <div class="log-wrap">
+    <div class="log-lbl">BREACH_LOG</div>
+    <div id="log"><span class="l-info">[SYS]  kernel loaded — add keywords and press INJECT</span></div>
+  </div>
+
+</div>
+
+<!-- ══ HISTORY TAB ══ -->
+<div id="tab-history">
+  <div id="hist-list"></div>
+</div>
+
+<!-- ══ BOTTOM BAR ══ -->
+<div class="bbar">
+  <div class="bbar-item">
+    <svg viewBox="0 0 12 12" fill="none">
+      <ellipse cx="6" cy="2.8" rx="4" ry="1.6" stroke="#707080" stroke-width="1"/>
+      <path d="M2 2.8v2.8c0 .9 1.8 1.6 4 1.6s4-.7 4-1.6V2.8" stroke="#707080" stroke-width="1"/>
+      <path d="M2 5.6v2.8c0 .9 1.8 1.6 4 1.6s4-.7 4-1.6V5.6" stroke="#707080" stroke-width="1"/>
+    </svg>
+    <span>DATA: <span class="bval" id="bbar-data">0 rows</span></span>
+  </div>
+  <div class="bbar-item">
+    <svg viewBox="0 0 12 12" fill="none">
+      <circle cx="6" cy="6" r="4.5" stroke="#707080" stroke-width="1"/>
+      <path d="M6 3.5v2.8l1.6 1.2" stroke="#707080" stroke-width="1" stroke-linecap="round"/>
+    </svg>
+    <span>RUNTIME: <span class="bval" id="bbar-time">00:00:00</span></span>
+  </div>
+  <div class="bbar-item">
+    <svg viewBox="0 0 12 12" fill="none">
+      <rect x="3" y="3" width="6" height="6" rx="1" stroke="#707080" stroke-width="1"/>
+      <rect x="4.5" y="4.5" width="3" height="3" rx=".3" stroke="#707080" stroke-width=".8"/>
+      <line x1="4.5" y1="1" x2="4.5" y2="3" stroke="#707080" stroke-width=".9"/>
+      <line x1="7.5" y1="1" x2="7.5" y2="3" stroke="#707080" stroke-width=".9"/>
+      <line x1="4.5" y1="9" x2="4.5" y2="11" stroke="#707080" stroke-width=".9"/>
+      <line x1="7.5" y1="9" x2="7.5" y2="11" stroke="#707080" stroke-width=".9"/>
+      <line x1="1"   y1="4.5" x2="3"  y2="4.5" stroke="#707080" stroke-width=".9"/>
+      <line x1="1"   y1="7.5" x2="3"  y2="7.5" stroke="#707080" stroke-width=".9"/>
+      <line x1="9"   y1="4.5" x2="11" y2="4.5" stroke="#707080" stroke-width=".9"/>
+      <line x1="9"   y1="7.5" x2="11" y2="7.5" stroke="#707080" stroke-width=".9"/>
+    </svg>
+    <span>MEMORY: <span class="bval" id="bbar-mem">— MB</span></span>
+  </div>
+  <div class="bbar-item">
+    <svg viewBox="0 0 12 12" fill="none">
+      <path d="M1 4C2.5 2.5 4.1 2 6 2s3.5.5 5 2" stroke="#30c070" stroke-width="1" stroke-linecap="round"/>
+      <path d="M2.8 5.8C3.8 4.9 4.8 4.5 6 4.5S8.2 4.9 9.2 5.8" stroke="#30c070" stroke-width="1" stroke-linecap="round"/>
+      <path d="M4.6 7.6C5.1 7.1 5.5 7 6 7s.9.1 1.4.6" stroke="#30c070" stroke-width="1" stroke-linecap="round"/>
+      <circle cx="6" cy="10" r=".8" fill="#30c070"/>
+    </svg>
+    <span>CONN: <span class="bval green" id="bbar-conn">STABLE</span></span>
+  </div>
+</div>
+
+<script src="src/popup.js"></script>
+<script>
+// ══════════════════════════════════════════════
+//  BOTTOM BAR — real working data
+// ══════════════════════════════════════════════
+
+// ── 1. RUNTIME timer ──
+let _startTime     = null;
+let _timerInterval = null;
+let _pausedTotal   = 0;
+
+function fmtTime(ms) {
+  const s = Math.floor(ms / 1000);
+  return [Math.floor(s/3600), Math.floor((s%3600)/60), s%60]
+    .map(v => String(v).padStart(2,'0')).join(':');
+}
+function startTimer() {
+  if (_timerInterval) return;
+  _startTime     = Date.now() - _pausedTotal;
+  _timerInterval = setInterval(() => {
+    document.getElementById('bbar-time').textContent = fmtTime(Date.now() - _startTime);
+  }, 1000);
+}
+function pauseTimer() {
+  if (!_timerInterval) return;
+  _pausedTotal = Date.now() - _startTime;
+  clearInterval(_timerInterval); _timerInterval = null;
+}
+function stopTimer() {
+  clearInterval(_timerInterval); _timerInterval = null; _pausedTotal = 0;
+  document.getElementById('bbar-time').textContent = '00:00:00';
+}
+
+const _btnStart = document.getElementById('btn-start');
+const _btnPause = document.getElementById('btn-pause');
+new MutationObserver(() => {
+  _btnStart.disabled ? startTimer() : stopTimer();
+}).observe(_btnStart, { attributes: true, attributeFilter: ['disabled'] });
+new MutationObserver(() => {
+  if (_btnPause.textContent.includes('Resume')) pauseTimer();
+  else if (_btnStart.disabled) startTimer();
+}).observe(_btnPause, { childList: true, subtree: true, characterData: true });
+
+// ── 2. DATA rows ──
+const _savedEl = document.getElementById('st-saved');
+const _dataEl  = document.getElementById('bbar-data');
+new MutationObserver(() => {
+  const n = parseInt(_savedEl.textContent) || 0;
+  _dataEl.textContent = n + (n === 1 ? ' row' : ' rows');
+}).observe(_savedEl, { childList: true, subtree: true, characterData: true });
+
+// ── 3. MEMORY ──
+(function() {
+  const el = document.getElementById('bbar-mem');
+  function upd() {
+    if (performance?.memory?.usedJSHeapSize > 0) {
+      el.textContent = (performance.memory.usedJSHeapSize / 1048576).toFixed(1) + ' MB';
+    } else {
+      chrome.runtime.sendMessage({ type: 'GET_STATE' }, s => {
+        if (chrome.runtime.lastError || !s) return;
+        el.textContent = ((s.scraped || 0) * 0.5).toFixed(0) + ' KB';
+      });
+    }
+  }
+  upd(); setInterval(upd, 4000);
+})();
+
+// ── 4. CONNECTION ──
+const _connEl = document.getElementById('bbar-conn');
+function updConn() {
+  if (navigator.onLine) {
+    _connEl.textContent = 'STABLE';
+    _connEl.className   = 'bval green';
+    _connEl.style.color = '';
+  } else {
+    _connEl.textContent = 'OFFLINE';
+    _connEl.className   = 'bval';
+    _connEl.style.color = 'var(--accent)';
+  }
+}
+updConn();
+window.addEventListener('online',  updConn);
+window.addEventListener('offline', updConn);
+chrome.runtime.onMessage.addListener(msg => {
+  if (msg.type === 'NETWORK_OFFLINE') {
+    _connEl.textContent = 'OFFLINE';
+    _connEl.className   = 'bval';
+    _connEl.style.color = 'var(--accent)';
+  }
+  if (msg.type === 'NETWORK_ONLINE' || msg.type === 'AUTO_RESUMED') {
+    _connEl.textContent = 'STABLE';
+    _connEl.className   = 'bval green';
+    _connEl.style.color = '';
+  }
+});
+</script>
+</body>
+</html>

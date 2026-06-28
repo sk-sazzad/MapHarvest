@@ -1,0 +1,39 @@
+{
+  "manifest_version": 2,
+  "name": "MapHarvest",
+  "version": "5.0.0",
+  "description": "Extract business data from Google Maps → Google Sheet (Category+City sheets, auto-resume, duplicate-safe)",
+  "icons": {
+    "16":  "icons/icon16.png",
+    "48":  "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "browser_action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png"
+    }
+  },
+  "permissions": [
+    "activeTab",
+    "storage",
+    "tabs",
+    "alarms",
+    "webNavigation",
+    "*://www.google.com/maps/*",
+    "*://script.google.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["*://www.google.com/maps/*"],
+      "js": ["src/content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "scripts": ["src/background.js"],
+    "persistent": true
+  },
+  "content_security_policy": "script-src 'self'; object-src 'self'"
+}
